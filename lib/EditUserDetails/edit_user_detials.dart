@@ -31,7 +31,12 @@ class _EditUserDetailsScreenState extends State<EditUserDetailsScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Your Personal Details'),
+        title: const Text(
+          "Your Personal Details",
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: const Color(0xFF009A90),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: SafeArea(
         child: BackgroundWidget(

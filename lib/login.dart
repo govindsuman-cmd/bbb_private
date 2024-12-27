@@ -46,8 +46,8 @@ class _LoginPageState extends State<LoginPage> {
         },
         body: {
           'grant_type': "client_credentials",
-          'client_id': 'client_id',
-          'client_secret': 'client_secret',
+          'client_id': 'a47c93f6-1a30-4edb-8ad1-9cfc6b640aa4',
+          'client_secret': 'a7bae359-b418-4952-8315-dfba81a2ee5b',
         },
       );
 

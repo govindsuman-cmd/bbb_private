@@ -11,7 +11,7 @@ import 'book_details_grid.dart';
 class SingleBookDetails extends StatefulWidget {
   final int biblioId;
 
-  const SingleBookDetails({Key? key, required this.biblioId}) : super(key: key);
+  const SingleBookDetails({super.key, required this.biblioId});
 
   @override
   _SingleBookDetailsState createState() => _SingleBookDetailsState();
@@ -80,14 +80,26 @@ class _SingleBookDetailsState extends State<SingleBookDetails> {
         if (data['totalItems'] > 0) {
           final imageUrl = data['items'][0]['volumeInfo']['imageLinks']['thumbnail'];
           setState(() {
-            bookImageUrl = imageUrl ?? '';
+            bookImageUrl = imageUrl ?? 'https://pick2read.com/assets/images/not_found.png';
+          });
+        } else {
+          setState(() {
+            bookImageUrl = 'https://pick2read.com/assets/images/not_found.png';
           });
         }
+      } else {
+        setState(() {
+          bookImageUrl = 'https://pick2read.com/assets/images/not_found.png';
+        });
       }
     } catch (e) {
       print('Error fetching book image: $e');
+      setState(() {
+        bookImageUrl = 'https://pick2read.com/assets/images/not_found.png';
+      });
     }
   }
+
 
   @override
   void initState() {
@@ -99,7 +111,7 @@ class _SingleBookDetailsState extends State<SingleBookDetails> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Book Details'),
+        title: const Text('Book Details', style: TextStyle(color: Colors.white),),
         backgroundColor: const Color(0xFF009A90),
       ),
       body: BackgroundWidget(

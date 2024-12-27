@@ -29,6 +29,15 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        release {
+            storeFile file("/home/app/keys/my-release-key.jks")  // Path to your keystore file
+            storePassword "openlx"  // Keystore password
+            keyAlias "myappkey"  // Alias for the key (same as the one you entered)
+            keyPassword "openlx"  // Key password
+        }
+    }
+
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.

@@ -6,7 +6,9 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class NewArrivals extends StatefulWidget {
-  const NewArrivals({super.key});
+  final String searchQuery; // Add searchQuery parameter
+
+  const NewArrivals({super.key, required this.searchQuery}); // Constructor to accept searchQuery
 
   @override
   State<NewArrivals> createState() => _NewArrivalsState();
@@ -17,7 +19,7 @@ class _NewArrivalsState extends State<NewArrivals> {
   Map<String, String> bookImages = {};
 
   final String defaultImageUrl =
-      'https://d1csarkz8obe9u.cloudfront.net/posterpreviews/book-cover-design-template-92c3f6e44971e2b7224afdb9bdac6356_screen.jpg?ts=1730154692';
+      'https://pick2read.com/assets/images/not_found.png';
 
   @override
   void initState() {
@@ -50,7 +52,8 @@ class _NewArrivalsState extends State<NewArrivals> {
       final response = await http.get(uri, headers: headers);
 
       if (response.statusCode == 200) {
-        final responseData = json.decode(response.body);
+      //  final responseData = json.decode(response.body);
+        final responseData = json.decode(utf8.decode(response.bodyBytes));
         setState(() {
           biblios = responseData ?? []; // Ensure biblios is not null
         });
@@ -99,6 +102,14 @@ class _NewArrivalsState extends State<NewArrivals> {
 
   @override
   Widget build(BuildContext context) {
+    List<dynamic> filteredBiblios = biblios.where((biblio) {
+      String title = biblio['title'] ?? '';
+      String author = biblio['author'] ?? '';
+      String searchQuery = widget.searchQuery.toLowerCase(); // Get search query
+      return title.toLowerCase().contains(searchQuery) ||
+          author.toLowerCase().contains(searchQuery);
+    }).toList();
+
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -139,17 +150,17 @@ class _NewArrivalsState extends State<NewArrivals> {
           const SizedBox(height: 10),
           SizedBox(
             height: 240,
-            child: biblios.isEmpty
+            child: filteredBiblios.isEmpty
                 ? const Center(child: CircularProgressIndicator())
                 : ListView.builder(
               scrollDirection: Axis.horizontal,
-              itemCount: biblios.length,
+              itemCount: filteredBiblios.length,
               itemBuilder: (context, index) {
-                if (index >= biblios.length) {
+                if (index >= filteredBiblios.length) {
                   return Container();
                 }
 
-                var biblio = biblios[index];
+                var biblio = filteredBiblios[index];
                 String title = biblio['title'] ?? 'Untitled';
                 String author = biblio['author'] ?? 'Unknown';
                 String isbn = biblio['isbn'] ?? '';

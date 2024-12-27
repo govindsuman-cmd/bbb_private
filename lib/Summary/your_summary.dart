@@ -1,5 +1,7 @@
 import 'package:bbb_mobile_app/CustomWidget/custom_tab_bar.dart';
 import 'package:bbb_mobile_app/CustomWidget/tab_content.dart';
+import 'package:bbb_mobile_app/Summary/fee_due_content.dart';
+import 'package:bbb_mobile_app/Summary/hold_content.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
@@ -52,38 +54,47 @@ class _YourSummaryState extends State<YourSummary> with SingleTickerProviderStat
       'Authorization': 'Bearer $accessToken',
     };
 
-    final response = await http.get(
-      Uri.parse('https://demo.bestbookbuddies.com/api/v1/checkouts'),
-      headers: headers,
-    );
+    try {
+      final response = await http.get(
+        Uri.parse('https://demo.bestbookbuddies.com/api/v1/checkouts'),
+        headers: headers,
+      );
 
-    if (response.statusCode == 200) {
-      final List<dynamic> checkoutData = json.decode(response.body);
-      if (checkoutData.isNotEmpty) {
-        for (var checkoutItem in checkoutData) {
-          int itemId = checkoutItem['item_id'];
-          String rawDueDate = checkoutItem['due_date'] ?? 'Unknown Due Date';
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
 
-          String dueDate = 'Unknown Due Date';
-          bool isOverdue = false;
-          int checkOutId=checkoutItem["checkout_id"];
-          if (rawDueDate != 'Unknown Due Date') {
-            try {
-              final DateTime parsedDate = DateTime.parse(rawDueDate);
-              dueDate = DateFormat('dd/MM/yyyy').format(parsedDate);
-              isOverdue = parsedDate.isBefore(DateTime.now());
-            } catch (e) {
-              print('Error parsing date: $e');
+      if (response.statusCode == 200) {
+        final List<dynamic> checkoutData = json.decode(response.body);
+        if (checkoutData.isNotEmpty) {
+          for (var checkoutItem in checkoutData) {
+            int itemId = checkoutItem['item_id'];
+            String rawDueDate = checkoutItem['due_date'] ?? 'Unknown Due Date';
+
+            String dueDate = 'Unknown Due Date';
+            bool isOverdue = false;
+            int checkOutId = checkoutItem["checkout_id"];
+
+            if (rawDueDate != 'Unknown Due Date') {
+              try {
+                final DateTime parsedDate = DateTime.parse(rawDueDate);
+                dueDate = DateFormat('dd/MM/yyyy').format(parsedDate);
+                isOverdue = parsedDate.isBefore(DateTime.now());
+              } catch (e) {
+                print('Error parsing date: $e');
+              }
             }
-          }
 
-          await _fetchItemData(itemId, dueDate, isOverdue,checkOutId);
+            await _fetchItemData(itemId, dueDate, isOverdue, checkOutId);
+          }
         }
+      } else {
+        print('Failed to load checkout data: ${response.statusCode}');
       }
-    } else {
-      print('Failed to load checkout data: ${response.statusCode}');
+    } catch (e) {
+      print('Error occurred during API call: $e');
     }
   }
+
 
   Future<void> _fetchItemData(int itemId, String dueDate, bool isOverdue, int checkOutId) async {
     final response = await http.get(
@@ -114,7 +125,8 @@ class _YourSummaryState extends State<YourSummary> with SingleTickerProviderStat
     );
 
     if (response.statusCode == 200) {
-      final bibliosData = json.decode(response.body);
+     // final bibliosData = json.decode(response.body);
+      final bibliosData = json.decode(utf8.decode(response.bodyBytes));
       final isbn = bibliosData['isbn'] ?? 'Unknown ISBN';
 
       String? imageUrl;
@@ -170,11 +182,16 @@ class _YourSummaryState extends State<YourSummary> with SingleTickerProviderStat
     }
 
     final overdueCards = cards.where((card) => card['isOverdue'] == true).toList();
-    final currentCheckouts = cards.where((card) => card['isOverdue'] == false).toList();
+    final currentCheckouts = cards;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Summary"),
+        title: const Text(
+          "Summary",
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: const Color(0xFF009A90),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: BackgroundWidget(
         child: Column(
@@ -191,8 +208,8 @@ class _YourSummaryState extends State<YourSummary> with SingleTickerProviderStat
                 children: [
                   TabContent(title: "Checkout(s)", content: currentCheckouts),
                   TabContent(title: "Overdue", content: overdueCards),
-                  TabContent(title: "Holds", content: []),
-                  TabContent(title: "Fee Due", content: []),
+                  HoldContent(accessToken: accessToken, patronId: patron_id),
+                  FeeDueContent(accessToken: accessToken, patronId: patron_id)
                 ],
               ),
             ),

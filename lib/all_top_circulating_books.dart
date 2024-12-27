@@ -20,8 +20,11 @@ class AllTopCirculatingBooks extends StatefulWidget {
 
 class _AllTopCirculatingBooksState extends State<AllTopCirculatingBooks> {
   List<dynamic> products = [];
+  List<dynamic> filteredProducts = [];
   int currentPage = 1;
   bool isLoading = false;
+
+  TextEditingController searchController = TextEditingController(); // Controller for search bar
 
   static const String baseUrl = "https://demo.bestbookbuddies.com/api/v1/biblios";
 
@@ -53,17 +56,17 @@ class _AllTopCirculatingBooksState extends State<AllTopCirculatingBooks> {
         final data = json.decode(utf8.decode(response.bodyBytes));
         if (data['totalItems'] > 0) {
           return data['items'][0]['volumeInfo']['imageLinks']['thumbnail'] ??
-              'https://d1csarkz8obe9u.cloudfront.net/posterpreviews/book-cover-design-template-92c3f6e44971e2b7224afdb9bdac6356_screen.jpg?ts=1730154692';
+              'https://pick2read.com/assets/images/not_found.png';
         }
       }
     } catch (e) {
       print('Error fetching thumbnail: $e');
     }
 
-    return 'https://d1csarkz8obe9u.cloudfront.net/posterpreviews/book-cover-design-template-92c3f6e44971e2b7224afdb9bdac6356_screen.jpg?ts=1730154692';
+    return 'https://pick2read.com/assets/images/not_found.png';
   }
 
-  Future<void> fetchProducts() async {
+  Future<void> fetchProducts({String searchQuery = ''}) async {
     try {
       setState(() {
         isLoading = true;
@@ -73,6 +76,7 @@ class _AllTopCirculatingBooksState extends State<AllTopCirculatingBooks> {
         '_order_by': '+biblio_id',
         '_page': currentPage.toString(),
         '_per_page': '10',
+        'q': searchQuery, // Pass the search query here
       });
 
       final headers = await _getHeaders();
@@ -91,6 +95,7 @@ class _AllTopCirculatingBooksState extends State<AllTopCirculatingBooks> {
 
         setState(() {
           products = fetchedProducts;
+          filteredProducts = fetchedProducts; // Initially show all products
         });
       } else {
         print('Error: ${response.statusCode} ${response.reasonPhrase}');
@@ -121,6 +126,18 @@ class _AllTopCirculatingBooksState extends State<AllTopCirculatingBooks> {
     }
   }
 
+  void onSearchChanged(String query) {
+    // Filter products based on search query
+    setState(() {
+      filteredProducts = products.where((product) {
+        final title = product['title']?.toLowerCase() ?? '';
+        final author = product['author']?.toLowerCase() ?? '';
+        final searchQuery = query.toLowerCase();
+        return title.contains(searchQuery) || author.contains(searchQuery);
+      }).toList();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -136,11 +153,25 @@ class _AllTopCirculatingBooksState extends State<AllTopCirculatingBooks> {
             ? const Center(child: CircularProgressIndicator())
             : Column(
           children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: TextField(
+                controller: searchController,
+                onChanged: onSearchChanged, // Trigger search
+                decoration: InputDecoration(
+                  labelText: 'Search books...',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  suffixIcon: Icon(Icons.search),
+                ),
+              ),
+            ),
             Expanded(
               child: ListView.builder(
-                itemCount: products.length,
+                itemCount: filteredProducts.length,
                 itemBuilder: (context, index) {
-                  final product = products[index];
+                  final product = filteredProducts[index];
                   final title = product['title'] ?? 'Untitled';
                   final isbn = product['isbn'] ?? 'N/A';
                   final author = product['author'] ?? 'Unknown';
@@ -149,7 +180,7 @@ class _AllTopCirculatingBooksState extends State<AllTopCirculatingBooks> {
                   final publication_year = product['publication_year'] ?? '';
 
                   String imageUrl = product['image_url'] ??
-                      'https://d1csarkz8obe9u.cloudfront.net/posterpreviews/book-cover-design-template-92c3f6e44971e2b7224afdb9bdac6356_screen.jpg?ts=1730154692';
+                      'https://pick2read.com/assets/images/not_found.png';
 
                   return GestureDetector(
                     onTap: () {
@@ -237,7 +268,7 @@ class _AllTopCirculatingBooksState extends State<AllTopCirculatingBooks> {
                     child: const Text('Previous'),
                   ),
                   ElevatedButton(
-                    onPressed: products.isNotEmpty ? goToNextPage : null,
+                    onPressed: filteredProducts.isNotEmpty ? goToNextPage : null,
                     child: const Text('Next'),
                   ),
                 ],

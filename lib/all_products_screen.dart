@@ -19,15 +19,25 @@ class AllProductsScreen extends StatefulWidget {
 
 class _AllProductsScreenState extends State<AllProductsScreen> {
   List<dynamic> products = [];
+  List<dynamic> filteredProducts = [];
   int currentPage = 1;
   bool isLoading = false;
 
   static const String baseUrl = "https://demo.bestbookbuddies.com/api/v1/biblios";
 
+  final TextEditingController _searchController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
     fetchProducts();
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<Map<String, String>> _getHeaders() async {
@@ -59,7 +69,7 @@ class _AllProductsScreenState extends State<AllProductsScreen> {
       print('Error fetching thumbnail: $e');
     }
 
-    return 'https://d1csarkz8obe9u.cloudfront.net/posterpreviews/book-cover-design-template-92c3f6e44971e2b7224afdb9bdac6356_screen.jpg?ts=1730154692';
+    return 'https://pick2read.com/assets/images/not_found.png';
   }
 
   Future<void> fetchProducts() async {
@@ -90,6 +100,7 @@ class _AllProductsScreenState extends State<AllProductsScreen> {
 
         setState(() {
           products = fetchedProducts;
+          filteredProducts = fetchedProducts; // Initialize filtered list with all products
         });
       } else {
         print('Error: ${response.statusCode} ${response.reasonPhrase}');
@@ -120,6 +131,17 @@ class _AllProductsScreenState extends State<AllProductsScreen> {
     }
   }
 
+  void _onSearchChanged() {
+    String query = _searchController.text.toLowerCase();
+    setState(() {
+      filteredProducts = products.where((product) {
+        String title = product['title']?.toLowerCase() ?? '';
+        String author = product['author']?.toLowerCase() ?? '';
+        return title.contains(query) || author.contains(query);
+      }).toList();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -130,24 +152,36 @@ class _AllProductsScreenState extends State<AllProductsScreen> {
         ),
         backgroundColor: const Color(0xFF009A90),
       ),
-      body: BackgroundWidget(  // Use BackgroundWidget here
+      body: BackgroundWidget(
         child: isLoading
             ? const Center(child: CircularProgressIndicator())
             : Column(
           children: [
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: TextField(
+                controller: _searchController,
+                decoration: const InputDecoration(
+                  labelText: 'Search by Title or Author',
+                  prefixIcon: Icon(Icons.search),
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ),
             Expanded(
               child: ListView.builder(
-                itemCount: products.length,
+                itemCount: filteredProducts.length,
                 itemBuilder: (context, index) {
-                  final product = products[index];
+                  final product = filteredProducts[index];
                   final title = product['title'] ?? 'Untitled';
                   final isbn = product['isbn'] ?? 'N/A';
                   final author = product['author'] ?? 'Unknown';
                   final biblioId = product['biblio_id'] ?? '';
-                  final publication_place= product['publication_place'] ?? '';
-                  final publication_year=product['publication_year']?? 'N/A';
+                  final publication_place = product['publication_place'] ?? '';
+                  final publication_year = product['publication_year'] ?? '';
+
                   String imageUrl = product['image_url'] ??
-                      'https://d1csarkz8obe9u.cloudfront.net/posterpreviews/book-cover-design-template-92c3f6e44971e2b7224afdb9bdac6356_screen.jpg?ts=1730154692';
+                      'https://pick2read.com/assets/images/not_found.png';
 
                   return GestureDetector(
                     onTap: () {
@@ -233,7 +267,7 @@ class _AllProductsScreenState extends State<AllProductsScreen> {
                     child: const Text('Previous'),
                   ),
                   ElevatedButton(
-                    onPressed: products.isNotEmpty ? goToNextPage : null,
+                    onPressed: filteredProducts.isNotEmpty ? goToNextPage : null,
                     child: const Text('Next'),
                   ),
                 ],

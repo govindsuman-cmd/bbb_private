@@ -1,4 +1,8 @@
 import 'package:bbb_mobile_app/EditUserDetails/edit_user_detials.dart';
+import 'package:bbb_mobile_app/PurchaseSuggestion/purchase_suggestion_screen.dart';
+import 'package:bbb_mobile_app/Summary/your_summary.dart';
+import 'package:bbb_mobile_app/charges.dart';
+import 'package:bbb_mobile_app/read_history.dart';
 import 'package:flutter/material.dart';
 
 class DrawerContent extends StatelessWidget {
@@ -65,7 +69,12 @@ class DrawerContent extends StatelessWidget {
             ListTile(
               title: const Text("Summary"),
               onTap: () {
-
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const YourSummary(),
+                  ),
+                );
               },
             ),
             ListTile(
@@ -79,7 +88,12 @@ class DrawerContent extends StatelessWidget {
             ListTile(
               title: const Text("Charges"),
               onTap: () {
-
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => Charges(),  // Removed `const`
+                  ),
+                );
               },
             ),
             ListTile(
@@ -91,14 +105,24 @@ class DrawerContent extends StatelessWidget {
             ListTile(
               title: const Text("Reading History"),
               onTap: () {
-
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ReadHistory(),
+                  ),
+                );
               },
             ),
             ListTile(
               title: const Text("Purchase Suggestions"),
-              onTap: () {
-
-              },
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const PurchaseSuggestionScreen(),
+                    ),
+                  );
+                },
             ),
             ListTile(
               title: const Text("Discharge"),

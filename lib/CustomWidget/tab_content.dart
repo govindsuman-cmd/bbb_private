@@ -79,13 +79,13 @@ class TabContent extends StatelessWidget {
                               style: TextStyle(color: Colors.grey[600]),
                             ),
                             Text(
-                              'ISBN: ${card['isbn'] ?? 'Unknown ISBN'}',
-                              style: TextStyle(color: Colors.grey[600]),
-                            ),
-                            Text(
                               'Pages: ${card['pages'] ?? 'Unknown Pages'}',
                               style: TextStyle(color: Colors.grey[600]),
                             ),
+                           /* Text(
+                              'Checkout Id: ${card['checkout_id'] ?? 'Unknown Pages'}',
+                              style: TextStyle(color: Colors.grey[600]),
+                            ),*/
                             Text(
                               'Due Date: ${card['due_date'] ??
                                   'Unknown Due Date'}',
@@ -109,7 +109,14 @@ class TabContent extends StatelessWidget {
                                     vertical: 8,
                                   ),
                                 ),
-                                child: const Text('Renew'),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text('Renew'),
+                                    SizedBox(width: 8),
+                                    Icon(Icons.refresh),
+                                  ],
+                                ),
                               ),
                             ),
                           ],
@@ -126,19 +133,22 @@ class TabContent extends StatelessWidget {
     );
   }
 
-  // Show confirmation dialog
   void _showRenewDialog(BuildContext context, Map<String, dynamic> card) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Are you sure you want to renew?'),
-          content: Text('Do you want to renew the item: ${card['title']}?'),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop(); // Close the dialog
               },
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.white, // NO button background color
+                foregroundColor: Color(0xFF009A90), // NO button text color
+                side: BorderSide(color: Color(0xFF009A90)), // NO button border color
+              ),
               child: const Text('NO'),
             ),
             TextButton(
@@ -146,6 +156,10 @@ class TabContent extends StatelessWidget {
                 Navigator.of(context).pop(); // Close the dialog
                 _renewItem(context, card);
               },
+              style: TextButton.styleFrom(
+                backgroundColor: Color(0xFF009A90), // YES button background color
+                foregroundColor: Colors.white, // YES button text color
+              ),
               child: const Text('YES'),
             ),
           ],
@@ -154,10 +168,11 @@ class TabContent extends StatelessWidget {
     );
   }
 
+
   Future<void> _renewItem(BuildContext context,
       Map<String, dynamic> card) async {
     final checkoutId = card['checkout_id'];
-    final apiUrl = 'https://demo.bestbookbuddies.com/api/v1/checkouts/$checkoutId/allows_renewal';
+    final apiUrl = 'https://demo.bestbookbuddies.com/api/v1/checkouts/$checkoutId/renewal';
 
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     final String? accessToken = prefs.getString('access_token');
@@ -171,12 +186,11 @@ class TabContent extends StatelessWidget {
     }
 
     try {
-      final response = await http.get(
+      final response = await http.post(
         Uri.parse(apiUrl),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $accessToken',
-          // Pass access token in the header
         },
       );
 

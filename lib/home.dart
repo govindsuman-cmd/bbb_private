@@ -160,12 +160,12 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
-      body: const BackgroundWidget(
+      body: BackgroundWidget(
         child: SingleChildScrollView(
           child: Column(
             children: [
-              NewArrivals(),
-              TopCirculatingBooks(),
+              NewArrivals(searchQuery: _searchController.text),
+              TopCirculatingBooks(searchQuery: _searchController.text),
               TotalBookUser(),
             ],
           ),

@@ -47,10 +47,9 @@ class _PlaceHoldWidgetState extends State<PlaceHoldWidget> {
     try {
       final accessToken = await _getAccessToken();
       final patronId = await _getPatronId();
-      final url = Uri.parse('https://demo.bestbookbuddies.com/api/v1/libraries')
-          .replace(queryParameters: {
-        'x-koha-query': '{"patron_id": { "=": "$patronId" }}'
-      });
+      final url = Uri.parse('https://demo.bestbookbuddies.com/api/v1/libraries');
+
+
 
       final response = await http.get(
         url,

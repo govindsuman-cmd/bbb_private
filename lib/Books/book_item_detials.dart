@@ -120,9 +120,9 @@ class _BookItemDetailsState extends State<BookItemDetails> {
                           Container(
                             color: Color(0xFF009A90), // Heading background color
                             padding: const EdgeInsets.all(12.0),
-                            child: Row(
+                            child: const Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: const [
+                              children: [
                                 Text(
                                   "Item Type",
                                   style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -133,6 +133,10 @@ class _BookItemDetailsState extends State<BookItemDetails> {
                                 ),
                                 Text(
                                   "Call Number",
+                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                ),
+                                Text(
+                                  "Due Date",
                                   style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                                 ),
                               ],
@@ -147,6 +151,7 @@ class _BookItemDetailsState extends State<BookItemDetails> {
                                 Text(item['item_type_id'] ?? 'N/A'),
                                 Text(item['home_library_id'] ?? 'N/A'),
                                 Text(item['callnumber'] ?? 'N/A'),
+                                Text(item['due_date'] ?? 'N/A')
                               ],
                             ),
                           ),

@@ -6,7 +6,9 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class TopCirculatingBooks extends StatefulWidget {
-  const TopCirculatingBooks({super.key});
+  final String searchQuery;
+
+  const TopCirculatingBooks({super.key, required this.searchQuery});
 
   @override
   State<TopCirculatingBooks> createState() => _TopCirculatingBooksState();
@@ -17,7 +19,7 @@ class _TopCirculatingBooksState extends State<TopCirculatingBooks> {
   Map<String, String> bookImages = {};
 
   final String defaultImageUrl =
-      'https://d1csarkz8obe9u.cloudfront.net/posterpreviews/book-cover-design-template-92c3f6e44971e2b7224afdb9bdac6356_screen.jpg?ts=1730154692';
+      'https://pick2read.com/assets/images/not_found.png';
 
   @override
   void initState() {
@@ -50,9 +52,8 @@ class _TopCirculatingBooksState extends State<TopCirculatingBooks> {
       final response = await http.get(uri, headers: headers);
 
       if (response.statusCode == 200) {
-        // Decode with UTF-8
-        final decodedResponse = utf8.decode(response.bodyBytes);
-        final responseData = json.decode(decodedResponse);
+        final responseBody = utf8.decode(response.bodyBytes);
+        final responseData = json.decode(responseBody);
 
         setState(() {
           biblios = responseData ?? [];
@@ -72,7 +73,6 @@ class _TopCirculatingBooksState extends State<TopCirculatingBooks> {
       print('Error fetching biblios: $e');
     }
   }
-
 
   Future<void> fetchBookImage(String isbn) async {
     final uri = Uri.parse('https://www.googleapis.com/books/v1/volumes')
@@ -103,6 +103,14 @@ class _TopCirculatingBooksState extends State<TopCirculatingBooks> {
 
   @override
   Widget build(BuildContext context) {
+    List<dynamic> filteredBiblios = biblios.where((biblio) {
+      String title = biblio['title'] ?? '';
+      String author = biblio['author'] ?? '';
+      String searchQuery = widget.searchQuery.toLowerCase();
+      return title.toLowerCase().contains(searchQuery) ||
+          author.toLowerCase().contains(searchQuery);
+    }).toList();
+
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -143,17 +151,17 @@ class _TopCirculatingBooksState extends State<TopCirculatingBooks> {
           const SizedBox(height: 10),
           SizedBox(
             height: 240,
-            child: biblios.isEmpty
+            child: filteredBiblios.isEmpty
                 ? const Center(child: CircularProgressIndicator())
                 : ListView.builder(
               scrollDirection: Axis.horizontal,
-              itemCount: biblios.length,
+              itemCount: filteredBiblios.length,
               itemBuilder: (context, index) {
-                if (index >= biblios.length) {
+                if (index >= filteredBiblios.length) {
                   return Container();
                 }
 
-                var biblio = biblios[index];
+                var biblio = filteredBiblios[index];
                 String title = biblio['title'] ?? 'Untitled';
                 String author = biblio['author'] ?? 'Unknown';
                 String isbn = biblio['isbn'] ?? '';
@@ -161,24 +169,26 @@ class _TopCirculatingBooksState extends State<TopCirculatingBooks> {
 
                 String imageUrl = bookImages[isbn] ?? defaultImageUrl;
 
-                String truncatedTitle =
-                title.length > 12 ? '${title.substring(0, 12)}...' : title;
-                String truncatedAuthor =
-                author.length > 7 ? '${author.substring(0, 7)}...' : author;
+                String truncatedTitle = title.length > 15
+                    ? '${title.substring(0, 12)}...'
+                    : title;
+                String truncatedAuthor = author.length > 7
+                    ? '${author.substring(0, 7)}...'
+                    : author;
 
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                  child: GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => SingleBookDetails(
-                            biblioId: biblioId,
-                          ),
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SingleBookDetails(
+                          biblioId: biblioId,
                         ),
-                      );
-                    },
+                      ),
+                    );
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
                     child: Card(
                       elevation: 5,
                       shape: RoundedRectangleBorder(
@@ -189,7 +199,7 @@ class _TopCirculatingBooksState extends State<TopCirculatingBooks> {
                         children: [
                           Container(
                             width: 150,
-                            height: 160,
+                            height: 160, // Fixed height for image container
                             decoration: BoxDecoration(
                               color: Colors.grey[300],
                               borderRadius: BorderRadius.circular(10),
@@ -211,14 +221,21 @@ class _TopCirculatingBooksState extends State<TopCirculatingBooks> {
                           const SizedBox(height: 8),
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                            child: Text(
-                              truncatedTitle,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(
+                                maxHeight: 40,
+                                maxWidth: 40
                               ),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
+                              child: Text(
+                                truncatedTitle,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1, // Allow at most 2 lines for title
+                                softWrap: true, // Allow wrapping for complex scripts like Malayalam
+                              ),
                             ),
                           ),
                           const SizedBox(height: 4),
